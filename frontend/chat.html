@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      height: 100vh;
+      background: #0f0f1a;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      flex-shrink: 0;
+    }
+    .partner-info { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .avatar.boy  { background: #1a1a3e; }
+    .avatar.girl { background: #2e1a2e; }
+    .partner-name   { color: #fff;    font-size: 15px; font-weight: 600; }
+    .partner-status { color: #4caf7d; font-size: 12px; }
+    .skip-btn {
+      padding: 9px 20px;
+      background: transparent;
+      border: 1.5px solid #ff6b6b;
+      border-radius: 10px;
+      color: #ff6b6b;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .skip-btn:hover { background: #ff6b6b; color: #fff; }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 2px; }
+
+    .msg-wrap { display: flex; flex-direction: column; max-width: 72%; }
+    .msg-wrap.sent  { align-self: flex-end;   align-items: flex-end; }
+    .msg-wrap.recv  { align-self: flex-start; align-items: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+    }
+    .sent .bubble {
+      background: #7c5cfc;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .recv .bubble {
+      background: #1e1e35;
+      color: #e0e0e0;
+      border: 1px solid #2a2a4a;
+      border-bottom-left-radius: 4px;
+    }
+    .msg-time { font-size: 10px; color: #555; margin-top: 4px; }
+
+    .sys-msg {
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+      padding: 6px 14px;
+      background: #1a1a2e;
+      border-radius: 20px;
+      align-self: center;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #1a1a2e;
+      border-top: 1px solid #2a2a4a;
+      flex-shrink: 0;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .input-area input:focus { border-color: #7c5cfc; }
+    .input-area input::placeholder { color: #444; }
+
+    .send-btn {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: #7c5cfc;
+      border: none; color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn:hover  { background: #6a4aed; }
+    .send-btn:active { transform: scale(0.95); }
+
+    /* Partner left overlay */
+    .overlay {
+      display: none;
+      position: absolute; inset: 0;
+      background: #0f0f1acc;
+      z-index: 10;
+      align-items: center;
+      justify-content: center;
+    }
+    .overlay.show { display: flex; }
+    .overlay-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 320px;
+    }
+    .overlay-card h3 { color: #fff;  font-size: 18px; margin-bottom: 10px; }
+    .overlay-card p  { color: #888;  font-size: 13px; margin-bottom: 24px; }
+    .overlay-btn {
+      width: 100%;
+      padding: 13px;
+      background: #7c5cfc;
+      color: #fff; border: none;
+      border-radius: 12px;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+    }
+    .overlay-btn:hover { background: #6a4aed; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="partner-info">
+      <div class="avatar" id="partnerAvatar">👤</div>
+      <div>
+        <div class="partner-name"   id="partnerName">...</div>
+        <div class="partner-status">● Online</div>
+      </div>
+    </div>
+    <button class="skip-btn" onclick="skipChat()">Skip ⏭</button>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="sys-msg">Chat shuru ho gayi! Ek doosre se baat karo 👋</div>
+  </div>
+
+  <div class="input-area">
+    <input
+      type="text"
+      id="msgInput"
+      placeholder="Kuch likho..."
+      maxlength="500"
+      onkeydown="if(event.key==='Enter') sendMessage()"
+    />
+    <button class="send-btn" onclick="sendMessage()">➤</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <h3>Partner chala gaya 👋</h3>
+      <p id="overlayMsg">Naya match dhundhen?</p>
+      <button class="overlay-btn" onclick="findNew()">Naya Match Dhundho →</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const username      = localStorage.getItem('rc_username');
+    const gender        = localStorage.getItem('rc_gender');
+    const partnerName   = localStorage.getItem('rc_partner');
+    const partnerGender = localStorage.getItem('rc_partner_gender');
+    const roomId        = localStorage.getItem('rc_room_id');
+
+    // Agar koi bhi data missing hai to wapas home
+    if (!username || !gender || !roomId) {
+      window.location.href = '/';
+    }
+
+    // Partner info UI mein set karo
+    document.getElementById('partnerName').textContent = partnerName || 'Stranger';
+    const avatarEl = document.getElementById('partnerAvatar');
+    if (partnerGender === 'boy') {
+      avatarEl.textContent = '👦';
+      avatarEl.classList.add('boy');
+    } else {
+      avatarEl.textContent = '👧';
+      avatarEl.classList.add('girl');
+    }
+
+    const socket = io();
+    const messagesEl = document.getElementById('messages');
+    let skipping = false;
+
+    socket.on('connect', () => {
+      // IMPORTANT: join nahi, rejoin_chat use karo — yahi fix hai
+      socket.emit('rejoin_chat', { username, gender, roomId });
+    });
+
+    // Message receive
+    socket.on('message', (data) => {
+      addMessage(data.text, 'recv', data.time);
+    });
+
+    // Partner left
+    socket.on('partnerLeft', (data) => {
+      if (skipping) return;
+      addSysMsg('Partner ne chat chhod di');
+      document.getElementById('overlayMsg').textContent = data.message;
+      document.getElementById('overlay').classList.add('show');
+    });
+
+    // Naya match mila (skip ke baad)
+    socket.on('matched', (data) => {
+      localStorage.setItem('rc_partner',        data.partnerName);
+      localStorage.setItem('rc_partner_gender', data.partnerGender);
+      localStorage.setItem('rc_room_id',        data.roomId);
+      window.location.href = 'chat.html';
+    });
+
+    // Waiting (skip ke baad koi nahi mila abhi)
+    socket.on('waiting', () => {
+      window.location.href = 'waiting.html';
+    });
+
+    function sendMessage() {
+      const inp  = document.getElementById('msgInput');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      addMessage(text, 'sent', now);
+      socket.emit('message', text);
+    }
+
+    function addMessage(text, type, time) {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-wrap ' + type;
+      wrap.innerHTML = `
+        <div class="bubble">${escapeHtml(text)}</div>
+        <div class="msg-time">${time}</div>
+      `;
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addSysMsg(text) {
+      const div = document.createElement('div');
+      div.className = 'sys-msg';
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function escapeHtml(t) {
+      return t
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    function skipChat() {
+      skipping = true;
+      addSysMsg('Aapne skip kiya...');
+      socket.emit('skip');
+    }
+
+    function findNew() {
+      skipping = true;
+      document.getElementById('overlay').classList.remove('show');
+      socket.emit('skip');
+    }
+  </script>
+</body>
+</html>

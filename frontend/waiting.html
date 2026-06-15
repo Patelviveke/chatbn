@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Match Dhundh Rahe Hain...</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #0f0f1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 56px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .pulse-ring {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #7c5cfc22;
+      border: 2px solid #7c5cfc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      animation: pulse 1.5s ease-in-out infinite;
+      font-size: 36px;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 #7c5cfc44; }
+      50% { transform: scale(1.08); box-shadow: 0 0 0 16px #7c5cfc00; }
+    }
+    h2 { color: #fff; font-size: 22px; margin-bottom: 10px; }
+    .status { color: #888; font-size: 14px; margin-bottom: 32px; min-height: 20px; }
+    .dots span {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #7c5cfc;
+      margin: 0 4px;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-8px); opacity: 1; }
+    }
+    .cancel-btn {
+      margin-top: 32px;
+      padding: 11px 28px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #666;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cancel-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+    .user-info {
+      margin-bottom: 28px;
+      padding: 12px 20px;
+      background: #0f0f1a;
+      border-radius: 10px;
+      border: 1px solid #2a2a4a;
+    }
+    .user-info span { color: #7c5cfc; font-weight: 600; }
+    .user-info p { color: #aaa; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="pulse-ring" id="pulseIcon">🔍</div>
+    <div class="user-info">
+      <p>Aap: <span id="displayName">...</span> · <span id="displayGender">...</span></p>
+    </div>
+    <h2>Match Dhundh Rahe Hain</h2>
+    <p class="status" id="statusMsg">Opposite gender ka user dhundh rahe hain...</p>
+    <div class="dots">
+      <span></span><span></span><span></span>
+    </div>
+    <br/>
+    <button class="cancel-btn" onclick="cancel()">← Wapas Jao</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const username = localStorage.getItem('rc_username');
+    const gender   = localStorage.getItem('rc_gender');
+
+    if (!username || !gender) {
+      window.location.href = '/';
+    }
+
+    document.getElementById('displayName').textContent   = username;
+    document.getElementById('displayGender').textContent = gender === 'boy' ? '👦 Boy' : '👧 Girl';
+
+    const socket = io();
+
+    socket.on('connect', () => {
+      // Sirf waiting page pe join emit karo
+      socket.emit('join', { username, gender });
+    });
+
+    socket.on('waiting', (data) => {
+      document.getElementById('statusMsg').textContent = data.message;
+    });
+
+    socket.on('matched', (data) => {
+      // roomId bhi save karo — chat.html ko chahiye hoga
+      localStorage.setItem('rc_partner',        data.partnerName);
+      localStorage.setItem('rc_partner_gender', data.partnerGender);
+      localStorage.setItem('rc_room_id',        data.roomId);
+
+      document.getElementById('pulseIcon').textContent  = '🎉';
+      document.getElementById('statusMsg').textContent  = 'Match mil gaya! Chat kholte hain...';
+
+      setTimeout(() => {
+        window.location.href = 'chat.html';
+      }, 600);
+    });
+
+    function cancel() {
+      socket.disconnect();
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
