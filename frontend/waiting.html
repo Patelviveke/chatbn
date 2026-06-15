@@ -106,7 +106,7 @@
     document.getElementById('displayName').textContent   = username;
     document.getElementById('displayGender').textContent = gender === 'boy' ? '👦 Boy' : '👧 Girl';
 
-    const socket = io(https://chattbn.onrender.com);
+    const socket = io('https://chattbn.onrender.com');
 
     socket.on('connect', () => {
       // Sirf waiting page pe join emit karo
