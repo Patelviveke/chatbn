@@ -55,17 +55,32 @@ io.on("connection", (socket) => {
 
   // Message bhejo sirf room ke partner ko
   socket.on("message", (msg) => {
-    if (socket.roomId) {
-      socket.to(socket.roomId).emit("message", {
-        text: msg,
-        sender: socket.username,
-        time: new Date().toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit"
-        })
-      });
-    }
-  });
+  console.log(`Message from ${socket.username} in room ${socket.roomId}: ${msg}`);
+  
+  if (socket.roomId) {
+    // Partner tak message pahunchao
+    socket.to(socket.roomId).emit("message", {
+      text: msg,
+      sender: socket.username,
+      time: new Date().toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    });
+    
+    // Confirmation ke liye (optional)
+    socket.emit("message", {
+      text: msg,
+      sender: "You",
+      time: new Date().toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    });
+  } else {
+    console.log("Error: No roomId for message from", socket.username);
+  }
+});
 
   // Skip — current chat chhodo, naya match dhundho
   socket.on("skip", () => {

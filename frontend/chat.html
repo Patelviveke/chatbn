@@ -229,8 +229,14 @@
 
     // Message receive
     socket.on('message', (data) => {
-      addMessage(data.text, 'recv', data.time);
-    });
+  console.log("Message received:", data);
+  // Agar sender "You" hai toh apna message hai, ignore karo
+  if (data.sender === "You") {
+    addMessage(data.text, 'sent', data.time);
+  } else {
+    addMessage(data.text, 'recv', data.time);
+  }
+});
 
     // Partner left
     socket.on('partnerLeft', (data) => {
